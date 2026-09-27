@@ -1,0 +1,136 @@
+version: '3.8'
+
+services:
+  # ─────────────────────────────────────────
+  # PostgreSQL Database
+  # ─────────────────────────────────────────
+  db:
+    image: postgres:15-alpine
+    container_name: claimdesk_db
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: claimdesk
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-postgres_dev_123}
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./database/migrations:/docker-entrypoint-initdb.d:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d claimdesk"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+    networks:
+      - claimdesk_net
+
+  # ─────────────────────────────────────────
+  # Adminer — Database Admin UI
+  # Access: http://localhost:8080
+  # Server: db | User: postgres | DB: claimdesk
+  # ─────────────────────────────────────────
+  adminer:
+    image: adminer:latest
+    container_name: claimdesk_adminer
+    restart: unless-stopped
+    ports:
+      - "8080:8080"
+    depends_on:
+      db:
+        condition: service_healthy
+    networks:
+      - claimdesk_net
+
+  # ─────────────────────────────────────────
+  # ML Priority Classification Service
+  # Access: http://localhost:8000
+  # ─────────────────────────────────────────
+  ml-service:
+    build:
+      context: ./ml-service
+      dockerfile: Dockerfile
+    container_name: claimdesk_ml
+    restart: unless-stopped
+    ports:
+      - "8000:8000"
+    volumes:
+      - ./ml-service/models:/app/models
+    environment:
+      MODEL_PATH: /app/models/xgb_priority.pkl
+      PREPROCESSOR_PATH: /app/models/preprocessor.pkl
+      SHAP_EXPLAINER_PATH: /app/models/shap_explainer.pkl
+    networks:
+      - claimdesk_net
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 40s
+
+  # ─────────────────────────────────────────
+  # Express REST Backend
+  # Access: http://localhost:4000
+  # ─────────────────────────────────────────
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: claimdesk_backend
+    restart: unless-stopped
+    ports:
+      - "4000:4000"
+    environment:
+      NODE_ENV: development
+      PORT: 4000
+      DATABASE_URL: postgresql://postgres:${POSTGRES_PASSWORD:-postgres_dev_123}@db:5432/claimdesk
+      JWT_SECRET: ${JWT_SECRET:-claimdesk_jwt_secret_change_in_production_32chars}
+      JWT_EXPIRES_IN: 7d
+      ML_SERVICE_URL: http://ml-service:8000
+      FRANKFURTER_URL: https://api.frankfurter.app
+      UPLOAD_DIR: /app/uploads
+      MAX_FILE_SIZE_BYTES: 10485760
+      CORS_ORIGIN: ${CORS_ORIGIN:-http://localhost:5173}
+    volumes:
+      - uploads:/app/uploads
+    depends_on:
+      db:
+        condition: service_healthy
+    networks:
+      - claimdesk_net
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:4000/health"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 20s
+
+  # ─────────────────────────────────────────
+  # React Frontend (Nginx serving Vite build)
+  # Access: http://localhost:5173
+  # ─────────────────────────────────────────
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+      args:
+        VITE_API_URL: ${VITE_API_URL:-http://localhost:4000}
+    container_name: claimdesk_frontend
+    restart: unless-stopped
+    ports:
+      - "5173:80"
+    depends_on:
+      - backend
+    networks:
+      - claimdesk_net
+
+volumes:
+  postgres_data:
+    driver: local
+  uploads:
+    driver: local
+
+networks:
+  claimdesk_net:
+    driver: bridge
