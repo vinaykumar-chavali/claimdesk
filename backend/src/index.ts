@@ -39,8 +39,14 @@ const limiter = rateLimit({
 });
 app.use(limiter);
 
+import fs from 'fs';
+import { initDB } from './config/database';
+
 // File uploads serving
-const uploadsDirectory = path.join(__dirname, '../../../uploads');
+const uploadsDirectory = path.resolve(process.cwd(), 'uploads');
+if (!fs.existsSync(uploadsDirectory)) {
+  fs.mkdirSync(uploadsDirectory, { recursive: true });
+}
 app.use('/uploads', express.static(uploadsDirectory));
 
 // Routes
@@ -57,6 +63,19 @@ app.use('/audit', auditRoutes);
 // Error Handling
 app.use(errorHandler);
 
-app.listen(env.PORT, () => {
-  console.log(`🚀 ClaimDesk Backend running on port ${env.PORT}`);
-});
+const portNumber = parseInt(process.env.PORT || env.PORT || '10000', 10);
+
+initDB()
+  .then(() => {
+    app.listen(portNumber, '0.0.0.0', () => {
+      console.log(`🚀 ClaimDesk Backend running on port ${portNumber}`);
+    });
+  })
+  .catch((err) => {
+    console.error('Failed to initialize database on startup:', err);
+    // Still start server so /health responds
+    app.listen(portNumber, '0.0.0.0', () => {
+      console.log(`🚀 ClaimDesk Backend running on port ${portNumber} (DB fallback mode)`);
+    });
+  });
+
