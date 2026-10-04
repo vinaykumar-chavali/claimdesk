@@ -1,0 +1,36 @@
+services:
+  # 1. Express Backend API
+  - type: web
+    name: claimdesk-backend
+    env: node
+    rootDir: backend
+    plan: free
+    buildCommand: npm install && npm run build
+    startCommand: npm start
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: PORT
+        value: 10000
+      - key: DATABASE_URL
+        sync: false # Set via Render Dashboard using Neon connection string
+      - key: JWT_SECRET
+        generateValue: true
+      - key: CORS_ORIGIN
+        value: "*"
+      - key: ML_SERVICE_URL
+        fromService:
+          type: web
+          name: claimdesk-ml
+          property: host
+          envVarKey: ML_SERVICE_URL
+          # Formats to http://claimdesk-ml:8000/analyze
+
+  # 2. Python FastAPI ML Microservice
+  - type: web
+    name: claimdesk-ml
+    env: docker
+    rootDir: ml-service
+    plan: free
+    dockerfilePath: Dockerfile
+    dockerContext: .
