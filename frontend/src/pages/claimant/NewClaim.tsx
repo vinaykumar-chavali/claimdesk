@@ -16,74 +16,8 @@ import { DocumentUpload } from '../../components/claims/DocumentUpload';
 import { Alert } from '../../components/ui/Alert';
 import { Spinner } from '../../components/ui/Spinner';
 
-interface RegisteredPolicy {
-  number: string;
-  category: 'car' | 'bike' | 'health';
-  title: string;
-  sub: string;
-  specs: string;
-  coverage: string;
-  icon: typeof Car;
-  borderTheme: string;
-  activeRing: string;
-  badge: string;
-  badgeClass: string;
-}
 
-const ACTIVE_REGISTERED_POLICIES: RegisteredPolicy[] = [
-  {
-    number: 'AV-AUTO-00101',
-    category: 'car',
-    title: 'Toyota Camry Sedan',
-    sub: 'Four-Wheeler Comprehensive',
-    specs: '2022 Toyota Camry · Reg: KA-01-AB-1234',
-    coverage: '$50,000 USD Limit',
-    icon: Car,
-    borderTheme: 'hover:border-navy-400 group-hover:shadow-md',
-    activeRing: 'ring-2 ring-navy-800 border-navy-800 bg-blue-50/30 shadow-lg',
-    badge: '🚗 Four-Wheeler (Car)',
-    badgeClass: 'bg-blue-100 text-blue-900 border-blue-200'
-  },
-  {
-    number: 'AV-AUTO-00103',
-    category: 'bike',
-    title: 'Yamaha YZF-R3 Sport',
-    sub: 'Two-Wheeler Supersport',
-    specs: '2023 Yamaha YZF-R3 · Reg: DL-03-EF-9012',
-    coverage: '$25,000 USD Limit',
-    icon: Bike,
-    borderTheme: 'hover:border-cyan-400 group-hover:shadow-md',
-    activeRing: 'ring-2 ring-cyan-700 border-cyan-700 bg-cyan-50/40 shadow-lg',
-    badge: '🏍️ Two-Wheeler (Bike)',
-    badgeClass: 'bg-cyan-100 text-cyan-900 border-cyan-200'
-  },
-  {
-    number: 'AV-AUTO-00104',
-    category: 'bike',
-    title: 'Royal Enfield 350',
-    sub: 'Two-Wheeler Classic Cruiser',
-    specs: '2022 Royal Enfield 350 · Reg: KA-05-GH-3456',
-    coverage: '$20,000 USD Limit',
-    icon: Bike,
-    borderTheme: 'hover:border-cyan-400 group-hover:shadow-md',
-    activeRing: 'ring-2 ring-cyan-700 border-cyan-700 bg-cyan-50/40 shadow-lg',
-    badge: '🏍️ Two-Wheeler (Bike)',
-    badgeClass: 'bg-cyan-100 text-cyan-900 border-cyan-200'
-  },
-  {
-    number: 'AV-HLTH-00201',
-    category: 'health',
-    title: 'Family Health Shield',
-    sub: 'Comprehensive Medical & Surgery',
-    specs: 'Inpatient Hospitalization & Emergency',
-    coverage: '$100,000 USD Limit',
-    icon: HeartPulse,
-    borderTheme: 'hover:border-emerald-400 group-hover:shadow-md',
-    activeRing: 'ring-2 ring-emerald-700 border-emerald-700 bg-emerald-50/40 shadow-lg',
-    badge: '🏥 Medical & Health',
-    badgeClass: 'bg-emerald-100 text-emerald-900 border-emerald-200'
-  }
-];
+
 
 const STEPS = [
   { id: 'step-1-policy', num: 1, label: '1. Policy', short: 'Policy' },
@@ -94,7 +28,7 @@ const STEPS = [
 
 export default function NewClaim() {
   const navigate = useNavigate();
-  const [policySearch, setPolicySearch] = useState('AV-AUTO-00101');
+  const [policySearch, setPolicySearch] = useState('');
   const [files, setFiles] = useState<File[]>([]);
   const [submitError, setSubmitError] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -197,12 +131,6 @@ export default function NewClaim() {
   const coverageLimit = policy ? Number(policy.coverage_amount) : 0;
   const isAmountExceeded = !!(watchedAmount && Number(watchedAmount) > coverageLimit);
 
-  const handleSelectPolicy = (num: string) => {
-    if (policy && policy.policy_number !== num) {
-      setPreviousPolicy(policy);
-    }
-    setPolicySearch(num);
-  };
 
   return (
     <div className="max-w-4xl mx-auto space-y-6 pb-20">
@@ -215,11 +143,11 @@ export default function NewClaim() {
         </div>
         <h1 className="text-3xl font-black text-navy-900 tracking-tight">File an Insurance Claim</h1>
         <p className="text-sm text-slate-600 mt-1 font-medium">
-          Complete the 4-step intake process. Automated ML triage prioritizes your request.
+          Start by entering your policy number to unlock the intake form.
         </p>
       </div>
 
-      {/* AAVE PHYSICAL GLASS FLOATING INTAKE CAPSULE (Floats below the sticky navbar and remains permanently visible while scrolling) */}
+      {/* AAVE PHYSICAL GLASS FLOATING INTAKE CAPSULE */}
       <div className="sticky top-[4.75rem] z-40 my-3 flex justify-center w-full pointer-events-none">
         <div className="pointer-events-auto aave-floating-bar rounded-full p-1.5 px-3.5 flex items-center justify-between gap-3 max-w-full overflow-x-auto shadow-2xl transition-all duration-300 backdrop-blur-2xl">
           
@@ -227,12 +155,19 @@ export default function NewClaim() {
             <span className="text-[11px] font-black uppercase tracking-wider text-navy-950">
               Claim Intake
             </span>
-            <span className="text-[11px] font-bold text-blue-700">· Step {activeStep}/4</span>
+            {policy ? (
+              <span className="text-[11px] font-bold text-blue-700">· Step {activeStep}/4</span>
+            ) : (
+              <span className="text-[11px] font-bold text-slate-500">· Enter Policy</span>
+            )}
           </div>
 
-          {/* Stepper Pills with Dynamic Scroll-Spy Tracking & Click-to-Jump (Aave Recessed Glass Track + Lens) */}
+          {/* Stepper Pills */}
           <div className="flex items-center gap-1.5 p-1 rounded-full aave-track overflow-x-auto">
             {STEPS.map((step, idx) => {
+              // Steps 2-4 are fully hidden until policy is verified
+              if (step.num > 1 && !policy) return null;
+
               const isCompleted = 
                 step.num === 1 ? !!policy :
                 step.num === 2 ? (watchedTitle && watchedDate && watchedAmount) :
@@ -243,13 +178,16 @@ export default function NewClaim() {
               const isAccessible = step.num === 1 || !!policy;
 
               return (
-                <div key={step.id} className="flex items-center shrink-0">
+                <div
+                  key={step.id}
+                  className={`flex items-center shrink-0 transition-all duration-500 ${step.num > 1 ? 'animate-in fade-in slide-in-from-right-2' : ''}`}
+                >
                   {idx > 0 && <span className="text-slate-400 mx-0.5 text-xs select-none">›</span>}
                   <button
                     type="button"
                     disabled={!isAccessible}
                     onClick={() => scrollToStep(step.id, step.num)}
-                    title={isAccessible ? `Jump to Step ${step.num}: ${step.short}` : 'Select a policy first'}
+                    title={isAccessible ? `Jump to Step ${step.num}: ${step.short}` : 'Verify a policy first'}
                     className={`px-3.5 py-1.5 rounded-full text-xs font-black tracking-wide transition-all duration-300 flex items-center gap-1.5 cursor-pointer ${
                       isActive
                         ? 'aave-lens-active scale-[1.03] ring-2 ring-navy-900/30'
@@ -272,130 +210,71 @@ export default function NewClaim() {
             })}
           </div>
 
-          {/* Quick Active Policy Badge */}
-          <div className="hidden md:flex items-center gap-2 shrink-0">
-            <span className="text-[11px] font-mono font-black text-navy-950 aave-lens px-3 py-1 rounded-full border border-white/80 shadow-xs">
-              {policy ? policy.policy_number : 'Select Policy'}
-            </span>
-          </div>
+          {/* Active Policy Badge — only show when verified */}
+          {policy && (
+            <div className="hidden md:flex items-center gap-2 shrink-0 animate-in fade-in duration-300">
+              <span className="text-[11px] font-mono font-black text-navy-950 aave-lens px-3 py-1 rounded-full border border-white/80 shadow-xs">
+                {policy.policy_number}
+              </span>
+            </div>
+          )}
 
         </div>
       </div>
 
-      {/* STEP 1: Registered Policy Selection Tiles & Lookup */}
+
+      {/* STEP 1: Policy Number Entry */}
       <div id="step-1-policy" className={`transition-all duration-500 rounded-3xl ${activeStep === 1 ? 'ring-2 ring-blue-500/40 shadow-2xl shadow-blue-900/10' : ''}`}>
         <Card className="aave-glass-card rounded-3xl overflow-hidden shadow-xl border border-white/90 aave-step-pane">
           <CardHeader className="border-b border-slate-200/80 pb-4">
             <div className="flex items-center justify-between">
               <CardTitle className="text-lg font-black text-navy-950 flex items-center gap-2">
                 <span className="flex items-center justify-center h-6 w-6 rounded-full bg-navy-900 text-white text-xs font-black">1</span>
-                <span>Step 1: Select Underwritten Policy</span>
+                <span>Step 1: Enter Your Policy Number</span>
               </CardTitle>
-              <span className="text-xs font-bold text-slate-600">Select a policy to pre-populate vehicle specifications</span>
+              <span className="text-xs font-bold text-slate-600">Found on your policy certificate or insurance card</span>
             </div>
           </CardHeader>
           
-          <CardContent className="pt-6 space-y-6">
-            
-            {/* Interactive Policy Tiles (2x2 Grid) */}
+          <CardContent className="pt-6 space-y-5">
+
+            {/* Primary Policy Number Input */}
             <div>
-              <label className="block text-xs font-black uppercase tracking-wider text-navy-950 mb-3">
-                Registered Insurance Policies
-              </label>
-
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-3.5">
-                {ACTIVE_REGISTERED_POLICIES.map((item) => {
-                  const isSelected = (policy?.policy_number || policySearch) === item.number;
-                  const IconComponent = item.icon;
-
-                  return (
-                    <div
-                      key={item.number}
-                      onClick={() => handleSelectPolicy(item.number)}
-                      className={`relative p-4 rounded-2xl border transition-all duration-200 cursor-pointer interactive-tile text-left ${
-                        isSelected
-                          ? item.activeRing
-                          : `bg-white/95 border-slate-200/90 ${item.borderTheme}`
-                      }`}
-                    >
-                      {/* Top row: Badge and checkmark */}
-                      <div className="flex items-center justify-between mb-2">
-                        <span className={`px-2 py-0.5 rounded-md text-[11px] font-black border ${item.badgeClass}`}>
-                          {item.badge}
-                        </span>
-                        {isSelected ? (
-                          <span className="inline-flex items-center gap-1 text-[11px] font-black text-navy-950 bg-white px-2.5 py-0.5 rounded-full shadow-sm border border-slate-300">
-                            <Check className="h-3.5 w-3.5 text-emerald-600 stroke-[3]" /> Selected
-                          </span>
-                        ) : (
-                          <span className="text-[11px] font-bold text-slate-500 group-hover:text-navy-900">Select</span>
-                        )}
-                      </div>
-
-                      {/* Middle: Icon & Title */}
-                      <div className="flex items-start gap-3 mt-1">
-                        <div className={`p-2.5 rounded-xl ${
-                          item.category === 'health' 
-                            ? 'bg-emerald-50 text-emerald-700' 
-                            : item.category === 'bike' 
-                            ? 'bg-cyan-50 text-cyan-700' 
-                            : 'bg-blue-50 text-blue-700'
-                        } shadow-xs`}>
-                          <IconComponent className="h-5 w-5" />
-                        </div>
-                        <div>
-                          <h3 className="font-black text-navy-950 text-sm">{item.title}</h3>
-                          <p className="text-xs text-slate-700 font-semibold">{item.specs}</p>
-                        </div>
-                      </div>
-
-                      {/* Bottom: Policy Code & Coverage */}
-                      <div className="mt-3 pt-2.5 border-t border-slate-200/80 flex items-center justify-between text-xs">
-                        <span className="font-mono font-black text-navy-950 bg-slate-100 px-2 py-0.5 rounded border border-slate-300">
-                          {item.number}
-                        </span>
-                        <span className="font-black text-navy-950">
-                          {item.coverage}
-                        </span>
-                      </div>
-                    </div>
-                  );
-                })}
-              </div>
-            </div>
-
-            {/* Manual Policy Number Search Bar */}
-            <div className="pt-2 border-t border-slate-200/80">
-              <label className="block text-xs font-black uppercase tracking-wider text-navy-950 mb-1.5">
-                Or Lookup by Policy Number
+              <label className="block text-xs font-black uppercase tracking-wider text-navy-950 mb-2">
+                Policy Number
               </label>
               <div className="relative max-w-md">
-                <Input 
-                  placeholder="e.g. AV-AUTO-00101" 
+                <Input
+                  placeholder="e.g. AV-AUTO-00101"
                   value={policySearch}
                   onChange={(e) => {
                     if (policy && policy.policy_number !== e.target.value) {
                       setPreviousPolicy(policy);
                     }
-                    setPolicySearch(e.target.value);
+                    setPolicySearch(e.target.value.toUpperCase());
                   }}
-                  className="pl-10 font-mono font-bold uppercase ios-input rounded-xl text-sm"
+                  className="pl-10 font-mono font-bold uppercase ios-input rounded-xl text-sm tracking-widest"
+                  autoComplete="off"
+                  spellCheck={false}
                 />
                 <Search className="absolute left-3 top-2.5 h-5 w-5 text-slate-400" />
               </div>
+              <p className="text-xs text-slate-500 font-medium mt-1.5">
+                Enter the policy number exactly as it appears on your insurance documents.
+              </p>
             </div>
 
-            {/* Searching Spinner */}
-            {isSearching && (
+            {/* Searching Spinner — only show when query is long enough to be a real policy number */}
+            {isSearching && policySearch.length >= 10 && (
               <div className="flex items-center space-x-2 text-sm text-slate-700 font-semibold p-2">
-                <Spinner size="sm" /> <span>Verifying policy in AV Underwriting Registry...</span>
+                <Spinner size="sm" /> <span>Verifying policy...</span>
               </div>
             )}
-            
-            {/* Unmatched Alert */}
-            {policySearch && !isSearching && !policy && (
+
+            {/* Unmatched Alert — only show after enough chars for a complete policy number */}
+            {policySearch && policySearch.length >= 10 && !isSearching && !policy && (
               <Alert variant="warning">
-                No active policy found matching &quot;{policySearch}&quot;. Please verify the policy code or select one of the cards above.
+                No active policy found for &quot;{policySearch}&quot;. Please double-check the number on your policy certificate.
               </Alert>
             )}
 

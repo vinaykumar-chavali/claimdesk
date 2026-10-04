@@ -32,3 +32,11 @@ export const formatStatus = (status?: string | null) => {
   if (!status) return 'Unknown';
   return String(status).split('_').map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(' ');
 };
+
+export const getFileUrl = (pathStr?: string | null) => {
+  if (!pathStr) return '#';
+  if (pathStr.startsWith('http://') || pathStr.startsWith('https://') || pathStr.startsWith('blob:')) return pathStr;
+  const baseUrl = import.meta.env.VITE_API_URL || 'http://localhost:4000';
+  return `${baseUrl.replace(/\/$/, '')}/${pathStr.replace(/^\//, '')}`;
+};
+

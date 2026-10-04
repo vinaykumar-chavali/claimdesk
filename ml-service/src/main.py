@@ -45,4 +45,6 @@ async def analyze_claim(request: AnalyzeRequest):
         raise HTTPException(status_code=500, detail="An error occurred while processing the claim.")
 
 if __name__ == "__main__":
-    uvicorn.run("src.main:app", host="0.0.0.0", port=8000, reload=True, access_log=True)
+    import os
+    port = int(os.environ.get("PORT", 8000))
+    uvicorn.run("src.main:app", host="0.0.0.0", port=port, reload=False, access_log=True)

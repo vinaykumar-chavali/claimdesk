@@ -64,7 +64,7 @@ export default function MyClaims() {
             My Insurance Claims
           </h1>
           <p className="text-sm text-slate-500 mt-1">
-            Real-time status tracking, auto-populated vehicle records, and settlement currency conversions.
+            Track your active and historical claims, monitor their progress, and view settlement details.
           </p>
         </div>
 
@@ -121,7 +121,7 @@ export default function MyClaims() {
             {stats.submitted}
           </p>
           <p className={`text-[11px] mt-1 font-semibold ${statusFilter === 'submitted' ? 'text-blue-100' : 'text-blue-700'}`}>
-            Awaiting adjuster triage
+            Awaiting review
           </p>
         </div>
 

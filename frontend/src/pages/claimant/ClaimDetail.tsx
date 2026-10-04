@@ -8,7 +8,7 @@ import { PriorityBadge } from '../../components/claims/PriorityBadge';
 import { EventTimeline } from '../../components/claims/EventTimeline';
 import { FxWidget } from '../../components/fx/FxWidget';
 import { Spinner } from '../../components/ui/Spinner';
-import { formatDate, formatCurrency } from '../../utils/formatters';
+import { formatDate, formatCurrency, getFileUrl } from '../../utils/formatters';
 
 export default function ClaimDetail() {
   const { id } = useParams<{ id: string }>();
@@ -63,7 +63,7 @@ export default function ClaimDetail() {
         <Link to="/claims" className="text-sm font-medium text-navy-600 hover:text-navy-800 flex items-center gap-1.5 transition-colors">
           <ArrowLeft className="h-4 w-4" /> Back to My Claims
         </Link>
-        <span className="text-xs text-gray-500 font-mono">ID: {claim.id}</span>
+        <span className="text-xs text-slate-500 font-semibold">Ref: <span className="font-mono font-bold text-navy-800">#{claim.claim_number}</span></span>
       </div>
 
       {/* Header Banner with Aave Glass Refraction */}
@@ -223,7 +223,7 @@ export default function ClaimDetail() {
                         </div>
                       </div>
                       <a 
-                        href={doc.path} 
+                        href={getFileUrl(doc.path)} 
                         target="_blank" 
                         rel="noreferrer" 
                         className="px-3 py-1.5 text-xs bg-navy-900 text-white hover:bg-navy-800 rounded-xl font-bold border border-navy-800 flex items-center gap-1.5 shadow-sm transition-colors"
@@ -239,12 +239,12 @@ export default function ClaimDetail() {
             </CardContent>
           </Card>
 
-          {/* Activity & Audit Trail Card */}
+          {/* Claim Journey Card */}
           <Card className="aave-glass-card shadow-lg rounded-2xl overflow-hidden">
             <CardHeader className="pb-3 border-b border-slate-200/80">
               <CardTitle className="text-base font-black text-navy-950 flex items-center gap-2">
                 <Activity className="h-5 w-5 text-blue-700" />
-                Audit Trail & Verified History
+                Claim Journey
               </CardTitle>
             </CardHeader>
             <CardContent className="pt-4">
@@ -258,15 +258,12 @@ export default function ClaimDetail() {
                           <span className="font-black text-navy-950 capitalize">{log.action.replace(/_/g, ' ')}</span>
                           <span className="text-xs text-slate-600 font-bold">{formatDate(log.created_at)}</span>
                         </div>
-                        <p className="text-xs text-slate-700 font-medium mt-0.5">
-                          Actor: {log.actor_name || 'System'} ({log.actor_role || 'system'})
-                        </p>
                       </div>
                     </div>
                   ))}
                 </div>
               ) : (
-                <p className="text-sm text-slate-600 font-medium text-center py-4">No audit logs recorded for this claim.</p>
+                <p className="text-sm text-slate-600 font-medium text-center py-4">No activity recorded for this claim yet.</p>
               )}
             </CardContent>
           </Card>

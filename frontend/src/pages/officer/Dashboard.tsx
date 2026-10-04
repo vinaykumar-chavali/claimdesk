@@ -88,7 +88,7 @@ export default function Dashboard() {
             {user?.role === 'supervisor' ? 'Supervisor Overview & Controls' : 'Officer Workstation'}
           </h1>
           <p className="text-sm text-slate-500 mt-1">
-            Operational dashboard tracking claims lifecycle, ML triage priority, and audit logging.
+            Monitor claims lifecycle, manage workload, and drive decisions across all active cases.
           </p>
         </div>
         <Link to="/officer/claims">
@@ -367,14 +367,14 @@ export default function Dashboard() {
             <div className="absolute top-0 right-0 w-32 h-32 bg-blue-500/10 rounded-full blur-2xl pointer-events-none"></div>
             <CardContent className="p-5 space-y-2 relative z-10">
               <h4 className="text-sm font-bold text-white flex items-center gap-1.5">
-                <ShieldCheck className="h-4 w-4 text-emerald-400" /> ClaimDesk System Status
+                <ShieldCheck className="h-4 w-4 text-emerald-400" /> Platform Health
               </h4>
               <p className="text-xs text-slate-300 leading-relaxed font-normal">
-                Dual database engines operational (PostgreSQL & SQLite). Role-based workflow state machine actively protecting transitions.
+                All systems operational. Claims processing, document handling, and audit logging are fully active.
               </p>
               <div className="pt-2 flex items-center gap-2 text-xs text-emerald-400 font-medium">
                 <span className="h-2 w-2 rounded-full bg-emerald-400 animate-pulse"></span>
-                <span>Audit logging and state transitions operational</span>
+                <span>Secure · Compliant · Available 24/7</span>
               </div>
             </CardContent>
           </Card>

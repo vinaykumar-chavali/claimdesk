@@ -14,7 +14,7 @@ import { Button } from '../../components/ui/Button';
 import { Textarea } from '../../components/ui/Textarea';
 import { Spinner } from '../../components/ui/Spinner';
 import { FxWidget } from '../../components/fx/FxWidget';
-import { formatDate, formatCurrency } from '../../utils/formatters';
+import { formatDate, formatCurrency, getFileUrl } from '../../utils/formatters';
 import { useAuth } from '../../auth/AuthContext';
 
 export default function ClaimReview() {
@@ -84,9 +84,6 @@ export default function ClaimReview() {
     ? claim.document_paths
     : (typeof claim.document_paths === 'string' ? JSON.parse(claim.document_paths || '[]') : []);
 
-  const priorityReasons = Array.isArray(claim.priority_reason)
-    ? claim.priority_reason
-    : (typeof claim.priority_reason === 'string' ? JSON.parse(claim.priority_reason || '[]') : []);
 
   const isAuto = (claim as any).policy_type === 'automobile' || claim.policy?.type === 'automobile';
   const isBike = (claim as any).vehicle_category === 'bike' || (claim as any).policy_vehicle_category === 'bike' || claim.policy?.vehicle_category === 'bike';
@@ -113,7 +110,7 @@ export default function ClaimReview() {
         <Link to="/officer/claims" className="text-sm font-medium text-navy-600 hover:text-navy-800 flex items-center gap-1.5 transition-colors">
           <ArrowLeft className="h-4 w-4" /> Back to All Claims
         </Link>
-        <span className="text-xs text-gray-500 font-mono">Assigned Officer ID: {claim.assigned_officer_id || 'Auto-Assigned'}</span>
+        <span className="text-xs text-slate-500 font-semibold">Ref: <span className="font-mono font-bold text-navy-800">#{claim.claim_number}</span></span>
       </div>
 
       {/* Main Header Banner with Aave Glass Refraction */}
@@ -382,7 +379,7 @@ export default function ClaimReview() {
                           <span className="text-gray-500">{formatDate(log.created_at)}</span>
                         </div>
                         <p className="text-gray-600 mt-1">
-                          Actor: <strong>{log.actor_name || 'System'}</strong> ({log.actor_role || 'system'}) • IP: {log.ip_address || '127.0.0.1'}
+                          By: <strong>{log.actor_name || 'System'}</strong>{log.actor_role ? ` · ${log.actor_role}` : ''}
                         </p>
                       </div>
                     </div>
@@ -399,33 +396,33 @@ export default function ClaimReview() {
         {/* Right Column (1 Col) */}
         <div className="space-y-6">
 
-          {/* Priority Scoring Panel (if priority) */}
+          {/* Expedited Review Indicator */}
           {claim.priority_label === 'priority' && (
-            <Card className="border-red-200 bg-red-50/70 shadow-sm">
-              <CardHeader className="pb-2 border-b border-red-100">
-                <CardTitle className="text-red-900 text-sm font-bold flex items-center gap-2">
+            <Card className="aave-glass-card shadow-lg rounded-2xl overflow-hidden border-red-200/80">
+              <CardHeader className="pb-2 border-b border-red-100/80">
+                <CardTitle className="text-red-900 text-sm font-black flex items-center gap-2">
                   <AlertTriangle className="h-4 w-4 text-red-600" />
-                  Machine Learning Priority Flag
+                  Expedited Review Required
                 </CardTitle>
               </CardHeader>
-              <CardContent className="pt-3">
-                <div className="flex items-center justify-between mb-3">
-                  <span className="text-xs font-semibold text-red-800 uppercase tracking-wide">Confidence Score</span>
-                  <span className="text-2xl font-extrabold text-red-700">
-                    {claim.priority_score ? Math.round(Number(claim.priority_score) * 100) : 85}%
-                  </span>
-                </div>
-                {priorityReasons.length > 0 && (
-                  <div className="space-y-1.5">
-                    <span className="text-[11px] font-semibold text-red-900 uppercase">Top Contributing Features</span>
-                    {priorityReasons.map((r: any, i: number) => (
-                      <div key={i} className="text-xs bg-white/90 p-2 rounded border border-red-200/60 flex justify-between">
-                        <span className="font-semibold text-gray-800 capitalize">{r.feature.replace(/_/g, ' ')}</span>
-                        <span className="font-mono text-red-700 font-bold">{r.impact}</span>
-                      </div>
-                    ))}
+              <CardContent className="pt-3 space-y-3">
+                <div className="flex items-center gap-3 p-3 bg-red-50/70 rounded-xl border border-red-200/60">
+                  <span className="h-2.5 w-2.5 rounded-full bg-red-500 animate-pulse flex-shrink-0" />
+                  <div>
+                    <p className="text-xs font-black text-red-950 uppercase tracking-wide">High-Severity Claim</p>
+                    <p className="text-[11px] text-red-800 font-semibold mt-0.5">This claim meets criteria for immediate SLA handling. Prioritise review and decision.</p>
                   </div>
-                )}
+                </div>
+                <div className="grid grid-cols-2 gap-2 text-xs">
+                  <div className="bg-white/80 p-2.5 rounded-lg border border-red-100">
+                    <span className="text-red-700 font-black uppercase tracking-wide block mb-0.5">Claim Amount</span>
+                    <span className="font-black text-navy-950">{formatCurrency(claim.claim_amount, claim.currency)}</span>
+                  </div>
+                  <div className="bg-white/80 p-2.5 rounded-lg border border-red-100">
+                    <span className="text-red-700 font-black uppercase tracking-wide block mb-0.5">Severity</span>
+                    <span className="font-black text-navy-950 capitalize">{claim.injury_severity || 'Major'}</span>
+                  </div>
+                </div>
               </CardContent>
             </Card>
           )}
@@ -485,7 +482,7 @@ export default function ClaimReview() {
                         <FileText className="h-4 w-4 text-blue-700 flex-shrink-0" />
                         <span className="font-bold text-navy-950 truncate" title={doc.originalName}>{doc.originalName}</span>
                       </div>
-                      <a href={doc.path} target="_blank" rel="noreferrer" className="text-white bg-navy-900 hover:bg-navy-800 px-2.5 py-1 rounded-lg font-bold flex items-center flex-shrink-0 ml-2 shadow-xs transition-colors">
+                      <a href={getFileUrl(doc.path)} target="_blank" rel="noreferrer" className="text-white bg-navy-900 hover:bg-navy-800 px-2.5 py-1 rounded-lg font-bold flex items-center flex-shrink-0 ml-2 shadow-xs transition-colors">
                         <Download className="h-3 w-3 mr-1" /> View
                       </a>
                     </li>
