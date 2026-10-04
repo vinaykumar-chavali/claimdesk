@@ -65,17 +65,11 @@ app.use(errorHandler);
 
 const portNumber = parseInt(process.env.PORT || env.PORT || '10000', 10);
 
-initDB()
-  .then(() => {
-    app.listen(portNumber, '0.0.0.0', () => {
-      console.log(`🚀 ClaimDesk Backend running on port ${portNumber}`);
-    });
-  })
-  .catch((err) => {
-    console.error('Failed to initialize database on startup:', err);
-    // Still start server so /health responds
-    app.listen(portNumber, '0.0.0.0', () => {
-      console.log(`🚀 ClaimDesk Backend running on port ${portNumber} (DB fallback mode)`);
-    });
-  });
+app.listen(portNumber, '0.0.0.0', () => {
+  console.log(`🚀 ClaimDesk Backend running on port ${portNumber}`);
+  initDB()
+    .then(() => console.log('✅ Database initialized successfully'))
+    .catch((err) => console.error('⚠️ Database connection deferred/failed:', err.message));
+});
+
 
