@@ -8,6 +8,7 @@
 [![SQLite](https://img.shields.io/badge/SQLite-3-003B57.svg)](https://www.sqlite.org/)
 [![TailwindCSS](https://img.shields.io/badge/Tailwind-3.4-38bdf8.svg)](https://tailwindcss.com/)
 [![License](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE)
+[![Deploy to Render](https://render.com/images/deploy-to-render-button.svg)](https://render.com/deploy?repo=https://github.com/vinaykumar-chavali/claimdesk)
 
 ClaimDesk is an enterprise-grade digital insurance claim intake, triaging, and lifecycle tracking platform built for **AV Insurance**. It automates claim submission for automobile (four-wheelers and two-wheelers) and health policies, applies strict role-based access control (RBAC), enforces state-machine-driven status transitions, and integrates live foreign exchange reference rates via an external API.
 
