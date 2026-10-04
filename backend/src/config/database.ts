@@ -1,11 +1,9 @@
 import { Pool, QueryResult } from 'pg';
-import sqlite3 from 'sqlite3';
-import { open, Database } from 'sqlite';
 import path from 'path';
 import { env } from './env';
 
 let pgPool: Pool | null = null;
-let sqliteDb: Database | null = null;
+let sqliteDb: any = null;
 
 const isPostgres = 
   env.DATABASE_ENGINE === 'postgres' || 
@@ -30,13 +28,19 @@ export async function initDB() {
     }
   } else {
     if (!sqliteDb) {
-      const dbPath = path.join(__dirname, '../../../database/claimdesk.sqlite');
-      sqliteDb = await open({
-        filename: dbPath,
-        driver: sqlite3.Database
-      });
-      await sqliteDb.exec('PRAGMA foreign_keys = ON;');
-      console.log('✅ Connected to SQLite database');
+      try {
+        const sqlite3 = require('sqlite3');
+        const { open } = require('sqlite');
+        const dbPath = path.resolve(process.cwd(), '../database/claimdesk.sqlite');
+        sqliteDb = await open({
+          filename: dbPath,
+          driver: sqlite3.Database
+        });
+        await sqliteDb.exec('PRAGMA foreign_keys = ON;');
+        console.log('✅ Connected to SQLite database');
+      } catch (err: any) {
+        console.warn('SQLite fallback unavailable:', err.message);
+      }
     }
   }
 }
@@ -69,6 +73,9 @@ export const query = async (text: string, params: any[] = []): Promise<{ rows: a
     }
   } else {
     if (!sqliteDb) await initDB();
+    if (!sqliteDb) {
+      throw new Error('Database is not connected');
+    }
     
     // Convert Postgres $1, $2 to SQLite ?
     let sqliteText = text.replace(/\$\d+/g, '?');
@@ -77,11 +84,11 @@ export const query = async (text: string, params: any[] = []): Promise<{ rows: a
     
     try {
       if (isSelectOrReturning) {
-        const rows = await sqliteDb!.all(sqliteText, params);
+        const rows = await sqliteDb.all(sqliteText, params);
         const parsedRows = (rows || []).map(parseRowJson);
         return { rows: parsedRows, rowCount: parsedRows.length };
       } else {
-        const result = await sqliteDb!.run(sqliteText, params);
+        const result = await sqliteDb.run(sqliteText, params);
         return { rows: [], rowCount: result.changes ?? 0 };
       }
     } catch (err) {
